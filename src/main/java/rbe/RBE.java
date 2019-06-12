@@ -239,6 +239,12 @@ public class RBE implements RBEMBean {
 
     private static Vector ebs;
 
+    private static EBTPCW1Factory browsingFactory;
+    private static EBTPCW2Factory shoppingFactory;
+    private static EBTPCW3Factory orderingFactory;
+    private static DoubleArg tt_scale;
+    public static int currentMix;
+
     public static void main(String [] args) throws MalformedObjectNameException, NotCompliantMBeanException, InstanceAlreadyExistsException, MBeanRegistrationException {
         RBE rbe = new RBE();
 
@@ -303,7 +309,7 @@ public class RBE implements RBEMBean {
                                 "simulated second.  " +
                                 "Accepts factional values and E notation.", 1.0, db);
 
-        DoubleArg tt_scale =
+        tt_scale =
                 new DoubleArg("-TT", "Think time multiplication.",
                         "% Used to increase (>1.0) or decrease (<1.0) think time.  " +
                                 "In addition to slow-down factor.", 1.0, db);
@@ -521,6 +527,26 @@ public class RBE implements RBEMBean {
             e.setDaemon(true);
             e.setJmx(rbe.infinispanJMX);
         }
+
+        // Initialize other factories so that the workload mix can be changed dynamically
+        browsingFactory = new EBTPCW1Factory();
+        shoppingFactory = new EBTPCW2Factory();
+        orderingFactory = new EBTPCW3Factory();
+
+        if (!EBTPCW1Factory.isInitialized())
+            browsingFactory.initialize(new String[]{}, 0);
+
+        if (!EBTPCW2Factory.isInitialized())
+            shoppingFactory.initialize(new String[]{}, 0);
+
+        if (!EBTPCW3Factory.isInitialized())
+            orderingFactory.initialize(new String[]{}, 0);
+
+        // Add namePrepend so that new threads will have different names from the current thread names
+        // (No two threads can have the same name)
+        browsingFactory.setNamePrepend("new");
+        shoppingFactory.setNamePrepend("new");
+        orderingFactory.setNamePrepend("new");
 
         // Start EBs...
         System.out.println("Starting " + ebs.size() + " EBs.");
@@ -1054,5 +1080,101 @@ public class RBE implements RBEMBean {
             EB e = (EB) ebs.elementAt(i);
             e.tt_scale = tt_scale;
         }
+    }
+
+    @Override
+    public void changeEBCount(int count){
+        // check the current count and determine reduce or increase
+        int diff = ebs.size() - count;
+
+        if (diff < 0){
+            // increase
+            diff *= -1;
+            EBFactory factory;
+
+            switch (RBE.currentMix){
+                case 1:
+                    factory = browsingFactory;
+                    break;
+
+                case 2:
+                    factory = shoppingFactory;
+                    break;
+
+                case 3:
+                    factory = orderingFactory;
+                    break;
+
+                default:
+                    factory = browsingFactory;
+
+            }
+
+            for (int i = 0; i < diff; i ++){
+                EB e = factory.getEB(this);
+                e.setTimer(timer);
+                e.initialize();
+                e.tt_scale = tt_scale.num;
+                e.waitKey = false;
+                e.setDaemon(true);
+                ebs.addElement(e);
+                e.start();
+            }
+        }
+
+        else if (diff > 0){
+            // decrease
+        }
+
+        else {
+            // no need to change
+            // number of ebs are at the same level
+            return;
+        }
+    }
+
+    @Override
+    public void changeMix(int mix, int eb_count){
+        // issue terminate command for all the current running ebs
+        for (Object eb : ebs){
+            eb = (EB) eb;
+            ((EB) eb).terminate_this = true;
+        }
+        // remove those from the eb list
+        ebs.clear();
+
+        EBFactory factory;
+        // create new ebs from the factory
+        switch (mix){
+            case 1:
+                factory = browsingFactory;
+                break;
+
+            case 2:
+                factory = shoppingFactory;
+                break;
+
+            case 3:
+                factory = orderingFactory;
+                break;
+
+            default:
+                factory = browsingFactory;
+
+        }
+
+        // update new ebs with the correct params (think time etc.)
+        // and start the threads
+        for(int i = 0; i < eb_count; i ++){
+            EB e = factory.getEB(this);
+            e.setTimer(timer);
+            e.initialize();
+            e.tt_scale = tt_scale.num;
+            e.waitKey = false;
+            e.setDaemon(true);
+            ebs.addElement(e);
+            e.start();
+        }
+
     }
 }

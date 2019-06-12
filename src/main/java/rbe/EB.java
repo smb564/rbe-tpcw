@@ -73,6 +73,7 @@ import com.codahale.metrics.Timer;
 public class EB extends Thread {
     // Terminate all EBs.
     public static volatile boolean terminate=false;
+    public volatile boolean terminate_this=false;
 
     int          [/*from*/][/*to*/] transProb;      // Transition probabilities.
     EBTransition [/*from*/][/*to*/] trans;          // EB transitions.
@@ -222,7 +223,7 @@ public class EB extends Thread {
         try {
             while ((maxTrans == -1) || (maxTrans>0)) {
 
-                if (terminate) {
+                if (terminate || terminate_this) {
                     System.out.println("EB " + name + "commiting suicide!");
                     return;
                 }
@@ -303,7 +304,7 @@ public class EB extends Thread {
 
                     wirt_t1 = wirt_t2 + tt;
 
-                    if (terminate) {
+                    if (terminate || terminate_this) {
                         System.out.println("EB " + name + "commiting suicide!");
                         return;
                     }

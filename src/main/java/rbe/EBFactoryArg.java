@@ -46,6 +46,9 @@ public class EBFactoryArg extends Arg {
 	 
 	 // Read in factory class.
 	 String factoryClassName = args[a];
+
+	 RBE.currentMix = Integer.parseInt(factoryClassName.substring(10, 11));
+
 	 className = factoryClassName;
 	 EBFactory factory;
 	 try {

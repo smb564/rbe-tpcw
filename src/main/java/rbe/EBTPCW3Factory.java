@@ -161,14 +161,22 @@ public class EBTPCW3Factory extends EBFactory {
   private final int [][] cTransProb = new int[transProb.length][transProb.length];
   private final EBTransition [][] cTransArray = new EBTransition[transArray.length][transArray.length];
 
-  public EB getEB(RBE rbe)
+  private static boolean initialized = false;
+  private String namePrepend = "";
+
+    public static boolean isInitialized() {
+        return initialized;
+    }
+
+    public EB getEB(RBE rbe)
   {
     return(new EB(rbe, cTransProb, cTransArray, 1000000,
-		  "TPCW Ordering Mix EB #" + (count++)));
+		  "TPCW Ordering Mix EB " + namePrepend + " #" + (count++)));
   }
 
   public int initialize(String [] args, int firstArg) {
     int i;
+    initialized = true;
 
     if ((args.length == firstArg) || (args[firstArg].charAt(0)=='-')) {
       for (i=0;i<stateEnabled.length;i++) {
@@ -233,4 +241,17 @@ public class EBTPCW3Factory extends EBFactory {
       }
     }
   }
+
+    @Override
+    public String toString(){
+        return "Ordering";
+    }
+
+    public String getNamePrepend() {
+        return namePrepend;
+    }
+
+    public void setNamePrepend(String namePrepend) {
+        this.namePrepend = namePrepend;
+    }
 }
