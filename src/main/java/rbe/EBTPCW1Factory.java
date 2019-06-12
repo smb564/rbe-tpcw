@@ -167,7 +167,7 @@ public class EBTPCW1Factory extends EBFactory {
     public EB getEB(RBE rbe)
   {
     return(new EB(rbe, cTransProb, cTransArray, 1000000,
-		  "TPCW Broswing Mix EB #" + (count++)));
+		  "TPCW Broswing Mix EB " + namePrepend + " #" + (count++)));
   }
 
     public static boolean isInitialized() {

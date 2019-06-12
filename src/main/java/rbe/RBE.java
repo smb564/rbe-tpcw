@@ -1124,6 +1124,12 @@ public class RBE implements RBEMBean {
 
         else if (diff > 0){
             // decrease
+            // let's remove the first 'diff' number of elements
+            for (int i = 0; i < diff; i ++){
+                EB e = (EB) ebs.get(0);
+                e.terminate_this = true;
+                ebs.removeElementAt(0);
+            }
         }
 
         else {
