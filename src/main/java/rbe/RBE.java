@@ -1080,7 +1080,7 @@ public class RBE implements RBEMBean {
     }
 
     @Override
-    public void setThinkTime(double tt_scale) {
+    public void changeThinkTime(double tt_scale) {
         System.out.println("Changing think time");
         for (int i=0; i <ebs.size(); i++) {
             EB e = (EB) ebs.elementAt(i);

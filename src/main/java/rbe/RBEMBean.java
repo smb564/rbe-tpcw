@@ -1,7 +1,7 @@
 package rbe;
 
 public interface RBEMBean {
-    public void setThinkTime(double tt_scale);
+    public void changeThinkTime(double tt_scale);
 
     public void changeEBCount(int count);
 
