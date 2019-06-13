@@ -61,6 +61,7 @@ package rbe;
 import java.io.PrintStream;
 import java.util.Vector;
 
+import com.codahale.metrics.Meter;
 import rbe.util.Histogram;
 import rbe.util.Pad;
 
@@ -102,6 +103,12 @@ public class EBStats {
     long startMI;  // When measurement interval starts.
     long startRD;  // When measurement interval ends.
     long term;     // When to terminate test
+
+    private Meter errorMeter;
+
+    public void setErrorMeter(Meter errorMeter) {
+        this.errorMeter = errorMeter;
+    }
 
     // Times are all expressed in milliseconds.
     public EBStats(RBE rbe,
@@ -186,6 +193,7 @@ public class EBStats {
 
     public void error(String message, String url)
     {
+        errorMeter.mark();
         EBError error = new EBError(message, url);
         errors.addElement(error);
         System.out.println(error);

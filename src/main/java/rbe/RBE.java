@@ -69,6 +69,7 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import com.codahale.metrics.Meter;
 import rbe.args.Arg;
 import rbe.args.ArgDB;
 import rbe.args.IntArg;
@@ -235,6 +236,7 @@ public class RBE implements RBEMBean {
     // To expose metrics while running through JMX
     private static final MetricRegistry metricRegistry = new MetricRegistry();
     private static Timer timer;
+    private static Meter errors;
     private static final JmxReporter jmxReporter = JmxReporter.forRegistry(metricRegistry).build();
 
     private static Vector ebs;
@@ -274,6 +276,8 @@ public class RBE implements RBEMBean {
         timer = metricRegistry.timer("response_times",
                () -> new Timer(new SlidingTimeWindowArrayReservoir(
                    window_size.num, TimeUnit.SECONDS)));
+
+        errors = metricRegistry.meter("errors");
 
         jmxReporter.start();
 
@@ -494,6 +498,9 @@ public class RBE implements RBEMBean {
         rbe.stats = new EBStats(rbe,
                 60000, 50, 75000, 100, ebfArg.maxState, start,
                 1000L*ru.num, 1000L*mi.num, 1000L*rd.num);
+
+        rbe.stats.setErrorMeter(errors);
+
         String pidStr = null;
         if(monitor){
             try {
