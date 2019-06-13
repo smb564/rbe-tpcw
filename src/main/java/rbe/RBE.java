@@ -244,9 +244,10 @@ public class RBE implements RBEMBean {
     private static EBTPCW3Factory orderingFactory;
     private static DoubleArg tt_scale;
     public static int currentMix;
+    public static RBE rbe;
 
     public static void main(String [] args) throws MalformedObjectNameException, NotCompliantMBeanException, InstanceAlreadyExistsException, MBeanRegistrationException {
-        RBE rbe = new RBE();
+        rbe = new RBE();
 
         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         ObjectName rbeName = new ObjectName("rbe:type=RBE");
@@ -533,14 +534,18 @@ public class RBE implements RBEMBean {
         shoppingFactory = new EBTPCW2Factory();
         orderingFactory = new EBTPCW3Factory();
 
-        if (!EBTPCW1Factory.isInitialized())
-            browsingFactory.initialize(new String[]{}, 0);
+//        if (!EBTPCW1Factory.isInitialized())
+//            browsingFactory.initialize(new String[]{}, 0);
+//
+//        if (!EBTPCW2Factory.isInitialized())
+//            shoppingFactory.initialize(new String[]{}, 0);
+//
+//        if (!EBTPCW3Factory.isInitialized())
+//            orderingFactory.initialize(new String[]{}, 0);
 
-        if (!EBTPCW2Factory.isInitialized())
-            shoppingFactory.initialize(new String[]{}, 0);
-
-        if (!EBTPCW3Factory.isInitialized())
-            orderingFactory.initialize(new String[]{}, 0);
+        browsingFactory.initialize(new String[]{}, 0);
+        shoppingFactory.initialize(new String[]{}, 0);
+        orderingFactory.initialize(new String[]{}, 0);
 
         // Add namePrepend so that new threads will have different names from the current thread names
         // (No two threads can have the same name)
@@ -1076,6 +1081,7 @@ public class RBE implements RBEMBean {
 
     @Override
     public void setThinkTime(double tt_scale) {
+        System.out.println("Changing think time");
         for (int i=0; i <ebs.size(); i++) {
             EB e = (EB) ebs.elementAt(i);
             e.tt_scale = tt_scale;
@@ -1085,6 +1091,8 @@ public class RBE implements RBEMBean {
     @Override
     public void changeEBCount(int count){
         // check the current count and determine reduce or increase
+        System.out.println("Changing EB count..");
+
         int diff = ebs.size() - count;
 
         if (diff < 0){
@@ -1111,12 +1119,13 @@ public class RBE implements RBEMBean {
             }
 
             for (int i = 0; i < diff; i ++){
-                EB e = factory.getEB(this);
+                EB e = factory.getEB(rbe);
                 e.setTimer(timer);
                 e.initialize();
                 e.tt_scale = tt_scale.num;
                 e.waitKey = false;
                 e.setDaemon(true);
+                e.setJmx(rbe.infinispanJMX);
                 ebs.addElement(e);
                 e.start();
             }
@@ -1132,15 +1141,11 @@ public class RBE implements RBEMBean {
             }
         }
 
-        else {
-            // no need to change
-            // number of ebs are at the same level
-            return;
-        }
     }
 
     @Override
     public void changeMix(int mix, int eb_count){
+        System.out.println("Changing workload mix and eb count");
         // issue terminate command for all the current running ebs
         for (Object eb : ebs){
             eb = (EB) eb;
@@ -1172,12 +1177,13 @@ public class RBE implements RBEMBean {
         // update new ebs with the correct params (think time etc.)
         // and start the threads
         for(int i = 0; i < eb_count; i ++){
-            EB e = factory.getEB(this);
+            EB e = factory.getEB(rbe);
             e.setTimer(timer);
             e.initialize();
             e.tt_scale = tt_scale.num;
             e.waitKey = false;
             e.setDaemon(true);
+            e.setJmx(rbe.infinispanJMX);
             ebs.addElement(e);
             e.start();
         }

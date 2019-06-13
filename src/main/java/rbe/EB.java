@@ -209,6 +209,7 @@ public class EB extends Thread {
     }
 
     public void run() {
+        System.out.println("Starting : " + this.name);
         long wirt_t1;  // WIRT.T1 in TPC_W.Spec.
         long wirt_t2;  // Same as TT.T1 in TPC-W Spec.
         long wirt;     // Web Interaction Response Time (WIRT).
