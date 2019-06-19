@@ -78,19 +78,19 @@ public class EBStats {
     private final long [] end_times;
     private int num_interactions = 0;
     private RBE rbe;
-    private final int NUM_INTERACTIONS = 1000000;
+    private final int NUM_INTERACTIONS = 10000000;
 
     // List of retries/errors encount.
     public final Vector errors = new Vector(0);
 
     // web-interaction throughput over time.
-    //  Sampled continuously at 1 second intervals for upto two hours.
-    public final int [] through = new int[7200];
+    //  Sampled continuously at 1 second intervals for upto two hours and 30 minutes.
+    public final int [] through = new int[9000];
 
     //PEDRO -- stats about memory and cpu usage (see comment above)
-    public final float[] memoryHeap = new float[7200];
-    public final float[] memoryNonHeap = new float[7200];
-    public final float[] cpu = new float[7200];
+    public final float[] memoryHeap = new float[9000];
+    public final float[] memoryNonHeap = new float[9000];
+    public final float[] cpu = new float[9000];
 
 
     // The following four times are absolute times (UTC), millis.
