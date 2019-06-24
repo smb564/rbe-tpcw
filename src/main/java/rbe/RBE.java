@@ -236,6 +236,7 @@ public class RBE implements RBEMBean {
     // To expose metrics while running through JMX
     private static final MetricRegistry metricRegistry = new MetricRegistry();
     private static Timer timer;
+    private static Timer timer_all;
     private static Meter errors;
     private static final JmxReporter jmxReporter = JmxReporter.forRegistry(metricRegistry).build();
 
@@ -276,6 +277,8 @@ public class RBE implements RBEMBean {
         timer = metricRegistry.timer("response_times",
                () -> new Timer(new SlidingTimeWindowArrayReservoir(
                    window_size.num, TimeUnit.SECONDS)));
+
+        timer_all = metricRegistry.timer("response_times_all");
 
         errors = metricRegistry.meter("errors");
 
@@ -527,7 +530,7 @@ public class RBE implements RBEMBean {
         //  the slow-down factor which was not computed when EBs were created.
         for (i=0;i<ebs.size();i++) {
             EB e = (EB) ebs.elementAt(i);
-            e.setTimer(timer);
+            e.setTimer(timer, timer_all);
             e.initialize();
             e.tt_scale = tt_scale.num;
             e.waitKey = key.flag;
@@ -1127,7 +1130,7 @@ public class RBE implements RBEMBean {
 
             for (int i = 0; i < diff; i ++){
                 EB e = factory.getEB(rbe);
-                e.setTimer(timer);
+                e.setTimer(timer, timer_all);
                 e.initialize();
                 e.tt_scale = tt_scale.num;
                 e.waitKey = false;
@@ -1185,7 +1188,7 @@ public class RBE implements RBEMBean {
         // and start the threads
         for(int i = 0; i < eb_count; i ++){
             EB e = factory.getEB(rbe);
-            e.setTimer(timer);
+            e.setTimer(timer, timer_all);
             e.initialize();
             e.tt_scale = tt_scale.num;
             e.waitKey = false;
