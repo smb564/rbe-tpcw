@@ -166,6 +166,12 @@ public class EBStats {
         num_interactions++;
         //end HWC
 
+        // update recorder values only if this interaction occurred within the measuring interval
+        if (wirt_t2 < rbe.stats.startRD && wirt_t2 > rbe.stats.startMI){
+            rbe.responseTimesHistogram.recordValue(wirt_t2 - wirt_t1);
+        }
+
+
         b= ((int) (rbe.speed(wirt_t2-start)/1000L));
         if (b<through.length) {
             through[b]++;
@@ -358,6 +364,7 @@ public class EBStats {
         }
         return -1;
     }
+
 }
 
 class EBError {

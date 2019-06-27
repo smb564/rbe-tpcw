@@ -69,7 +69,8 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import com.codahale.metrics.Meter;
+import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
 import rbe.args.Arg;
 import rbe.args.ArgDB;
 import rbe.args.IntArg;
@@ -81,10 +82,10 @@ import rbe.args.BooleanArg;
 
 import rbe.util.*;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
-import com.codahale.metrics.Timer;
+import org.HdrHistogram.Histogram;
+
 import com.codahale.metrics.jmx.JmxReporter;
+
 
 import javax.management.*;
 
@@ -236,7 +237,7 @@ public class RBE implements RBEMBean {
     // To expose metrics while running through JMX
     private static final MetricRegistry metricRegistry = new MetricRegistry();
     private static Timer timer;
-    private static Timer timer_all;
+    public static Histogram responseTimesHistogram;
     private static Meter errors;
     private static final JmxReporter jmxReporter = JmxReporter.forRegistry(metricRegistry).build();
 
@@ -251,6 +252,8 @@ public class RBE implements RBEMBean {
 
     public static void main(String [] args) throws MalformedObjectNameException, NotCompliantMBeanException, InstanceAlreadyExistsException, MBeanRegistrationException {
         rbe = new RBE();
+
+        responseTimesHistogram = new Histogram(2);
 
         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         ObjectName rbeName = new ObjectName("rbe:type=RBE");
@@ -278,7 +281,14 @@ public class RBE implements RBEMBean {
                () -> new Timer(new SlidingTimeWindowArrayReservoir(
                    window_size.num, TimeUnit.SECONDS)));
 
-        timer_all = metricRegistry.timer("response_times_all");
+        // gauges to expose the metrics for the measurements interval
+        metricRegistry.register("mean_response_time", (Gauge<Double>) () -> responseTimesHistogram.getMean());
+
+        metricRegistry.register("p99_latency", (Gauge<Long>) () -> responseTimesHistogram.getValueAtPercentile(99));
+
+        metricRegistry.register("std_deviation", (Gauge<Double>) () -> responseTimesHistogram.getStdDeviation());
+
+        metricRegistry.register("total_requests", (Gauge<Long>) () -> responseTimesHistogram.getTotalCount());
 
         errors = metricRegistry.meter("errors");
 
@@ -501,7 +511,6 @@ public class RBE implements RBEMBean {
         rbe.stats = new EBStats(rbe,
                 60000, 50, 75000, 100, ebfArg.maxState, start,
                 1000L*ru.num, 1000L*mi.num, 1000L*rd.num);
-
         rbe.stats.setErrorMeter(errors);
 
         String pidStr = null;
@@ -530,7 +539,7 @@ public class RBE implements RBEMBean {
         //  the slow-down factor which was not computed when EBs were created.
         for (i=0;i<ebs.size();i++) {
             EB e = (EB) ebs.elementAt(i);
-            e.setTimer(timer, timer_all);
+            e.setTimer(timer);
             e.initialize();
             e.tt_scale = tt_scale.num;
             e.waitKey = key.flag;
@@ -583,6 +592,7 @@ public class RBE implements RBEMBean {
             e.start();
         }
         System.out.println("All of the EBs are alive!");
+
 
         // Wait for ramp down.
         rbe.stats.waitForRampDown();
@@ -1130,7 +1140,7 @@ public class RBE implements RBEMBean {
 
             for (int i = 0; i < diff; i ++){
                 EB e = factory.getEB(rbe);
-                e.setTimer(timer, timer_all);
+                e.setTimer(timer);
                 e.initialize();
                 e.tt_scale = tt_scale.num;
                 e.waitKey = false;
@@ -1188,7 +1198,7 @@ public class RBE implements RBEMBean {
         // and start the threads
         for(int i = 0; i < eb_count; i ++){
             EB e = factory.getEB(rbe);
-            e.setTimer(timer, timer_all);
+            e.setTimer(timer);
             e.initialize();
             e.tt_scale = tt_scale.num;
             e.waitKey = false;

@@ -123,11 +123,9 @@ public class EB extends Thread {
 
     // DropWizard timer object to keep track of performance
     private Timer timer;
-    private Timer timer_all;
 
-    public void setTimer(Timer timer, Timer timer_all){
+    public void setTimer(Timer timer){
         this.timer = timer;
-        this.timer_all = timer_all;
     }
 
     public EB(RBE rbe,
@@ -279,11 +277,6 @@ public class EB extends Thread {
 
                     // Update the new response time to the timer
                     timer.update(wirt_t2 - wirt_t1, TimeUnit.MILLISECONDS);
-
-                    // update timer_all values only if this interaction occurred within the measuring interval
-                    if (wirt_t2 < rbe.stats.startRD && wirt_t2 > rbe.stats.startMI){
-                        timer_all.update(wirt_t2 - wirt_t1, TimeUnit.MILLISECONDS);
-                    }
 
                     // 5) Compute and store Web Interaction Response Time (WIRT)
                     rbe.stats.interaction(curState, wirt_t1, wirt_t2, tt, jmx.getPercentOfUsedHeapMemory(),
