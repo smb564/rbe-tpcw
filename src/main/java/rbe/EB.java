@@ -352,6 +352,12 @@ public class EB extends Thread {
         Vector imageRd = new Vector(0);
 
         do {
+            // to terminate the EB if time ends while retrying
+            if (terminate || terminate_this) {
+                System.out.println("EB " + name + "commiting suicide!");
+                return;
+            }
+
             retry = false;
             try {
                 in = new BufferedInputStream(url.openStream(), 4096);
